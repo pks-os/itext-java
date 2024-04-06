@@ -22,6 +22,7 @@
  */
 package com.itextpdf.pdfua;
 
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.forms.PdfAcroForm;
 import com.itextpdf.forms.fields.CheckBoxFormFieldBuilder;
 import com.itextpdf.forms.fields.PdfButtonFormField;
@@ -42,18 +43,24 @@ import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.PdfNumber;
+import com.itextpdf.kernel.pdf.PdfObject;
 import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfStream;
 import com.itextpdf.kernel.pdf.PdfString;
 import com.itextpdf.kernel.pdf.PdfUAConformanceLevel;
+import com.itextpdf.kernel.pdf.PdfVersion;
 import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.pdf.WriterProperties;
 import com.itextpdf.kernel.pdf.action.PdfAction;
+import com.itextpdf.kernel.pdf.action.PdfMediaClipData;
+import com.itextpdf.kernel.pdf.action.PdfRendition;
 import com.itextpdf.kernel.pdf.annot.Pdf3DAnnotation;
 import com.itextpdf.kernel.pdf.annot.PdfAnnotation;
 import com.itextpdf.kernel.pdf.annot.PdfFileAttachmentAnnotation;
 import com.itextpdf.kernel.pdf.annot.PdfInkAnnotation;
 import com.itextpdf.kernel.pdf.annot.PdfLinkAnnotation;
+import com.itextpdf.kernel.pdf.annot.PdfPopupAnnotation;
 import com.itextpdf.kernel.pdf.annot.PdfPrinterMarkAnnotation;
 import com.itextpdf.kernel.pdf.annot.PdfRedactAnnotation;
 import com.itextpdf.kernel.pdf.annot.PdfScreenAnnotation;
@@ -70,6 +77,8 @@ import com.itextpdf.kernel.pdf.tagging.PdfObjRef;
 import com.itextpdf.kernel.pdf.tagging.StandardRoles;
 import com.itextpdf.kernel.pdf.tagutils.TagTreePointer;
 import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
+import com.itextpdf.kernel.utils.CompareTool;
+import com.itextpdf.kernel.xmp.XMPException;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.IBlockElement;
 import com.itextpdf.layout.element.Link;
@@ -216,6 +225,67 @@ public class PdfUAAnnotationsTest extends ExtendedITextTest {
             pdfPage.addAnnotation(screen);
         });
         framework.assertBothValid("ua1ScreenAnnotDirectChildOfAnnotTest");
+    }
+
+    @Test
+    public void ua1ScreenAnnotWithoutContentsAndAltTest() throws IOException {
+        framework.addBeforeGenerationHook((pdfDoc) -> {
+            PdfPage pdfPage = pdfDoc.addNewPage();
+            PdfScreenAnnotation screen = new PdfScreenAnnotation(new Rectangle(100, 100));
+            pdfPage.addAnnotation(screen);
+        });
+        framework.assertBothFail("ua1ScreenWithoutContentsTest",
+                MessageFormatUtil.format(PdfUAExceptionMessageConstants.ANNOTATION_OF_TYPE_0_SHOULD_HAVE_CONTENTS_OR_ALT_KEY, "Screen"));
+    }
+
+    @Test
+    public void ua1PopupWithoutContentOrAltTest() throws IOException {
+        framework.addBeforeGenerationHook((pdfDoc) -> {
+            PdfPage pdfPage = pdfDoc.addNewPage();
+            PdfPopupAnnotation popup = new PdfPopupAnnotation(new Rectangle(0f, 0f));
+            pdfPage.addAnnotation(popup);
+        });
+        framework.assertBothValid("ua1PopupWithoutContentOrAltTest");
+    }
+
+    @Test
+    public void ua1StampAnnotWithAltTest() throws IOException, InterruptedException {
+        String outPdf = DESTINATION_FOLDER + "ua1StampAnnotWithAltTest.pdf";
+        PdfUATestPdfDocument pdfDoc = new PdfUATestPdfDocument(
+                new PdfWriter(outPdf, PdfUATestPdfDocument.createWriterProperties()));
+        PdfPage pdfPage = pdfDoc.addNewPage();
+        PdfStampAnnotation stamp = new PdfStampAnnotation(new Rectangle(0, 0, 100, 50));
+        stamp.setStampName(PdfName.Approved);
+        stamp.getPdfObject().put(PdfName.Type, PdfName.Annot);
+
+        pdfPage.addAnnotation(stamp);
+        stamp.getPdfObject().put(PdfName.Alt, new PdfString("Alt description"));
+        pdfPage.addAnnotation(stamp);
+        AssertUtil.doesNotThrow(() -> {
+            pdfDoc.close();
+        });
+        Assert.assertNull(new CompareTool().compareByContent(outPdf,
+                SOURCE_FOLDER + "cmp_ua1StampAnnotWithAltTest.pdf",
+                DESTINATION_FOLDER, "diff_"));
+        Assert.assertNotNull(new VeraPdfValidator().validate(outPdf)); // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf/ua validation on Android)
+    }
+
+    @Test
+    public void ua1ScreenAnnotWithAltTest() throws IOException, InterruptedException {
+        String outPdf = DESTINATION_FOLDER + "ua1ScreenAnnotWithAltTest.pdf";
+        PdfUATestPdfDocument pdfDoc = new PdfUATestPdfDocument(
+                new PdfWriter(outPdf, PdfUATestPdfDocument.createWriterProperties()));
+        PdfPage pdfPage = pdfDoc.addNewPage();
+        PdfScreenAnnotation screen = new PdfScreenAnnotation(new Rectangle(100, 100));
+        pdfPage.addAnnotation(screen);
+        screen.getPdfObject().put(PdfName.Alt, new PdfString("Alt description"));
+        AssertUtil.doesNotThrow(() -> {
+                    pdfDoc.close();
+                });
+        Assert.assertNull(new CompareTool().compareByContent(outPdf,
+                SOURCE_FOLDER + "cmp_ua1ScreenAnnotWithAltTest.pdf",
+                DESTINATION_FOLDER, "diff_"));
+        Assert.assertNotNull(new VeraPdfValidator().validate(outPdf)); // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf/ua validation on Android)
     }
 
     @Test
@@ -390,6 +460,25 @@ public class PdfUAAnnotationsTest extends ExtendedITextTest {
     }
 
     @Test
+    public void linkAnnotWithoutContentsTest() throws IOException {
+        framework.addBeforeGenerationHook((pdfDoc) -> {
+            Rectangle rect = new Rectangle(100, 650, 400, 100);
+            PdfLinkAnnotation annot = new PdfLinkAnnotation(rect).setAction(PdfAction.createURI("https://itextpdf.com/"));
+
+            Document doc = new Document(pdfDoc);
+            Paragraph p2 = new Paragraph("Text");
+            p2.setFont(loadFont());
+            p2.getAccessibilityProperties().setRole(StandardRoles.LINK);
+            p2.setProperty(Property.LINK_ANNOTATION, annot);
+
+            doc.add(p2);
+            doc.getPdfDocument().getPage(1).getPdfObject().getAsArray(PdfName.Annots)
+                    .getAsDictionary(0).put(PdfName.Alt, new PdfString("Alt description"));
+        });
+        framework.assertBothFail("linkAnnotNestedWithinLinkWithAnAlternateDescriptionTest");
+    }
+
+    @Test
     public void linkAnnotNotDirectChildOfLinkButHiddenTest() throws IOException {
         framework.addBeforeGenerationHook((pdfDoc) -> {
             PdfPage page = pdfDoc.addNewPage();
@@ -428,6 +517,187 @@ public class PdfUAAnnotationsTest extends ExtendedITextTest {
             page.addAnnotation(annot);
         });
         framework.assertBothValid("linkAnnotNotDirectChildOfLinkButOutsideTest2");
+    }
+
+    @Test
+    public void screenAnnotationWithMediaDataTest() throws IOException, InterruptedException {
+        framework.addBeforeGenerationHook((pdfDoc) -> {
+            PdfPage page = pdfDoc.addNewPage();
+            PdfFileSpec spec = PdfFileSpec.createExternalFileSpec(pdfDoc, "sample.wav");
+            PdfScreenAnnotation screen = new PdfScreenAnnotation(new Rectangle(100, 100));
+            PdfAction action = PdfAction.createRendition("sample.wav",
+                    spec, "audio/x-wav", screen);
+            screen.setAction(action);
+            screen.setContents("screen annotation");
+            action.getPdfObject().getAsDictionary(PdfName.R).getAsDictionary(PdfName.C).put(PdfName.Alt, new PdfArray());
+            page.addAnnotation(screen);
+        });
+        framework.assertBothValid("screenAnnotationWithValidMediaDataTest");
+    }
+
+    @Test
+    public void screenAnnotationAsAAWithMediaDataTest() throws IOException, InterruptedException {
+        framework.addBeforeGenerationHook((pdfDoc) -> {
+            PdfPage page = pdfDoc.addNewPage();
+            PdfFileSpec spec = PdfFileSpec.createExternalFileSpec(pdfDoc, "sample.wav");
+            PdfScreenAnnotation screen = new PdfScreenAnnotation(new Rectangle(100, 100));
+            PdfAction action = PdfAction.createRendition("sample.wav",
+                    spec, "audio/x-wav", screen);
+            screen.setAdditionalAction(PdfName.E, action);
+            screen.setContents("screen annotation");
+            action.getPdfObject().getAsDictionary(PdfName.R).getAsDictionary(PdfName.C).put(PdfName.Alt, new PdfArray());
+            page.addAnnotation(screen);
+        });
+        framework.assertBothValid("screenAnnotationWithValidMediaDataTest");
+    }
+
+    @Test
+    public void screenAnnotationWithBEMediaDataTest() throws IOException, InterruptedException {
+        String outPdf = DESTINATION_FOLDER + "screenAnnotationWithBEMediaDataTest.pdf";
+        PdfDocument pdfDoc = new PdfUATestPdfDocument(new PdfWriter(outPdf, PdfUATestPdfDocument.createWriterProperties()));
+        PdfPage page = pdfDoc.addNewPage();
+        String file = "sample.wav";
+        String mimeType = "audio/x-wav";
+        PdfFileSpec spec = PdfFileSpec.createExternalFileSpec(pdfDoc, file);
+        PdfScreenAnnotation screen = new PdfScreenAnnotation(new Rectangle(100, 100));
+
+        PdfDictionary be = new PdfDictionary();
+        PdfDictionary mediaClipData = new PdfMediaClipData(file, spec, mimeType).getPdfObject();
+        mediaClipData.put(PdfName.Alt, new PdfArray());
+        be.put(PdfName.C, mediaClipData);
+
+        PdfDictionary rendition = new PdfDictionary();
+        rendition.put(PdfName.S, PdfName.MR);
+        rendition.put(PdfName.N, new PdfString(MessageFormatUtil.format("Rendition for {0}", file)));
+        rendition.put(PdfName.BE, be);
+
+        PdfAction action = new PdfAction().put(PdfName.S, PdfName.Rendition).
+                put(PdfName.OP, new PdfNumber(0)).put(PdfName.AN, screen.getPdfObject()).
+                put(PdfName.R, new PdfRendition(rendition).getPdfObject());
+
+        screen.setAction(action);
+        screen.setContents("screen annotation");
+        page.addAnnotation(screen);
+        pdfDoc.close();
+        Assert.assertNull(new CompareTool().compareByContent(outPdf,
+                SOURCE_FOLDER + "cmp_screenAnnotationWithBEMediaDataTest.pdf",
+                DESTINATION_FOLDER, "diff_"));
+        //Verapdf throws runtime exception, so we don't do this check here.
+    }
+
+    @Test
+    public void screenAnnotationWithMHMediaDataTest() throws IOException, InterruptedException {
+        String outPdf = DESTINATION_FOLDER + "screenAnnotationWithMHMediaDataTest.pdf";
+        PdfDocument pdfDoc = new PdfUATestPdfDocument(new PdfWriter(outPdf, PdfUATestPdfDocument.createWriterProperties()));
+        PdfPage page = pdfDoc.addNewPage();
+        String file = "sample.wav";
+        String mimeType = "audio/x-wav";
+        PdfFileSpec spec = PdfFileSpec.createExternalFileSpec(pdfDoc, file);
+        PdfScreenAnnotation screen = new PdfScreenAnnotation(new Rectangle(100, 100));
+
+        PdfDictionary mh = new PdfDictionary();
+        PdfDictionary mediaClipData = new PdfMediaClipData(file, spec, mimeType).getPdfObject();
+        mediaClipData.put(PdfName.Alt, new PdfArray());
+        mh.put(PdfName.C, mediaClipData);
+
+        PdfDictionary rendition = new PdfDictionary();
+        rendition.put(PdfName.S, PdfName.MR);
+        rendition.put(PdfName.N, new PdfString(MessageFormatUtil.format("Rendition for {0}", file)));
+        rendition.put(PdfName.MH, mh);
+
+        PdfAction action = new PdfAction().put(PdfName.S, PdfName.Rendition).
+                put(PdfName.OP, new PdfNumber(0)).put(PdfName.AN, screen.getPdfObject()).
+                put(PdfName.R, new PdfRendition(rendition).getPdfObject());
+
+        screen.setAction(action);
+        screen.setContents("screen annotation");
+        page.addAnnotation(screen);
+        pdfDoc.close();
+        Assert.assertNull(new CompareTool().compareByContent(outPdf,
+                SOURCE_FOLDER + "cmp_screenAnnotationWithMHMediaDataTest.pdf",
+                DESTINATION_FOLDER, "diff_"));
+        //Verapdf throws runtime exception, so we don't do this check here.
+    }
+
+    @Test
+    public void screenAnnotationWithMHWithoutAltMediaDataTest() throws IOException, InterruptedException {
+        String outPdf = DESTINATION_FOLDER + "screenAnnotationWithInvalidMHMediaDataTest.pdf";
+        PdfDocument pdfDoc = new PdfUATestPdfDocument(new PdfWriter(outPdf, PdfUATestPdfDocument.createWriterProperties()));
+        PdfPage page = pdfDoc.addNewPage();
+        String file = "sample.wav";
+        String mimeType = "audio/x-wav";
+        PdfFileSpec spec = PdfFileSpec.createExternalFileSpec(pdfDoc, file);
+        PdfScreenAnnotation screen = new PdfScreenAnnotation(new Rectangle(100, 100));
+
+        PdfDictionary mh = new PdfDictionary();
+        PdfDictionary mediaClipData = new PdfMediaClipData(file, spec, mimeType).getPdfObject();
+        mh.put(PdfName.C, mediaClipData);
+
+        PdfDictionary rendition = new PdfDictionary();
+        rendition.put(PdfName.S, PdfName.MR);
+        rendition.put(PdfName.N, new PdfString(MessageFormatUtil.format("Rendition for {0}", file)));
+        rendition.put(PdfName.MH, mh);
+
+        PdfAction action = new PdfAction().put(PdfName.S, PdfName.Rendition).
+                put(PdfName.OP, new PdfNumber(0)).put(PdfName.AN, screen.getPdfObject()).
+                put(PdfName.R, new PdfRendition(rendition).getPdfObject());
+
+        screen.setAction(action);
+        screen.setContents("screen annotation");
+        page.addAnnotation(screen);
+
+        Exception e = Assert.assertThrows(PdfUAConformanceException.class, () -> {
+            pdfDoc.close();
+        });
+        Assert.assertEquals(PdfUAExceptionMessageConstants.CT_OR_ALT_ENTRY_IS_MISSING_IN_MEDIA_CLIP, e.getMessage());
+        //Verapdf throws runtime exception, so we don't do this check here.
+    }
+
+    @Test
+    public void screenAnnotationWithoutAltInMediaDataTest() throws IOException, InterruptedException {
+        framework.addBeforeGenerationHook((pdfDoc) -> {
+            PdfPage page = pdfDoc.addNewPage();
+            PdfFileSpec spec = PdfFileSpec.createExternalFileSpec(pdfDoc, "sample.wav");
+            PdfScreenAnnotation screen = new PdfScreenAnnotation(new Rectangle(100, 100));
+            PdfAction action = PdfAction.createRendition("sample.wav",
+                    spec, "audio/x-wav", screen);
+            screen.setAction(action);
+            screen.setContents("screen annotation");
+            page.addAnnotation(screen);
+        });
+        framework.assertBothFail("screenAnnotationWithMediaDataTest", PdfUAExceptionMessageConstants.CT_OR_ALT_ENTRY_IS_MISSING_IN_MEDIA_CLIP);
+    }
+
+    @Test
+    public void screenAnnotationAsAAWithoutAltInMediaDataTest() throws IOException, InterruptedException {
+        framework.addBeforeGenerationHook((pdfDoc) -> {
+            PdfPage page = pdfDoc.addNewPage();
+            PdfFileSpec spec = PdfFileSpec.createExternalFileSpec(pdfDoc, "sample.wav");
+            PdfScreenAnnotation screen = new PdfScreenAnnotation(new Rectangle(100, 100));
+            PdfAction action = PdfAction.createRendition("sample.wav",
+                    spec, "audio/x-wav", screen);
+            screen.setAdditionalAction(PdfName.E, action);
+            screen.setContents("screen annotation");
+            page.addAnnotation(screen);
+        });
+        framework.assertBothFail("screenAnnotationWithMediaDataTest", PdfUAExceptionMessageConstants.CT_OR_ALT_ENTRY_IS_MISSING_IN_MEDIA_CLIP);
+    }
+
+    @Test
+    public void screenAnnotationWithoutCTInMediaDataTest() throws IOException, InterruptedException {
+        framework.addBeforeGenerationHook((pdfDoc) -> {
+            PdfPage page = pdfDoc.addNewPage();
+            PdfFileSpec spec = PdfFileSpec.createExternalFileSpec(pdfDoc, "sample.wav");
+            PdfScreenAnnotation screen = new PdfScreenAnnotation(new Rectangle(100, 100));
+            PdfAction action = PdfAction.createRendition("sample.wav",
+                    spec, "audio/x-wav", screen);
+            screen.setAction(action);
+            screen.setContents("screen annotation");
+            action.getPdfObject().getAsDictionary(PdfName.R).getAsDictionary(PdfName.C).put(PdfName.Alt, new PdfArray());
+            action.getPdfObject().getAsDictionary(PdfName.R).getAsDictionary(PdfName.C).remove(PdfName.CT);
+            page.addAnnotation(screen);
+        });
+        framework.assertBothFail("screenAnnotationWithMediaDataTest", PdfUAExceptionMessageConstants.CT_OR_ALT_ENTRY_IS_MISSING_IN_MEDIA_CLIP);
     }
 
     @Test

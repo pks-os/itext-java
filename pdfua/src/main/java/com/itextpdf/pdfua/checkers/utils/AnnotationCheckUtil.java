@@ -22,10 +22,12 @@
  */
 package com.itextpdf.pdfua.checkers.utils;
 
+import com.itextpdf.commons.utils.MessageFormatUtil;
 import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfName;
+import com.itextpdf.kernel.pdf.PdfObject;
 import com.itextpdf.kernel.pdf.annot.PdfAnnotation;
 import com.itextpdf.kernel.pdf.tagging.IStructureNode;
 import com.itextpdf.kernel.pdf.tagging.PdfObjRef;
@@ -108,23 +110,51 @@ public final class AnnotationCheckUtil {
                 }
             }
 
-            if (!isAnnotationVisible(annotObj)) {
+            PdfName subtype = annotObj.getAsName(PdfName.Subtype);
+
+            if (!isAnnotationVisible(annotObj) || PdfName.Popup.equals(subtype)) {
                 return;
             }
 
-            if (PdfName.PrinterMark.equals(annotObj.get(PdfName.Subtype))) {
+            if (PdfName.PrinterMark.equals(subtype)) {
                 throw new PdfUAConformanceException(PdfUAExceptionMessageConstants.PRINTER_MARK_IS_NOT_PERMITTED);
             }
 
-            if (PdfName.TrapNet.equals(annotObj.get(PdfName.Subtype))) {
+            if (PdfName.TrapNet.equals(subtype)) {
                 throw new PdfUAConformanceException(PdfUAExceptionMessageConstants.ANNOT_TRAP_NET_IS_NOT_PERMITTED);
             }
 
-            if (PdfName.Link.equals(annotObj.get(PdfName.Subtype))) {
+            if (!PdfName.Widget.equals(subtype) && !(annotObj.containsKey(PdfName.Contents)
+                    || annotObj.containsKey(PdfName.Alt))) {
+                throw new PdfUAConformanceException(MessageFormatUtil.format(
+                        PdfUAExceptionMessageConstants.ANNOTATION_OF_TYPE_0_SHOULD_HAVE_CONTENTS_OR_ALT_KEY, subtype.getValue()));
+            }
+
+            if (PdfName.Link.equals(subtype)) {
                 PdfStructElem parentLink = context.getElementIfRoleMatches(PdfName.Link, objRef.getParent());
                 if (parentLink == null) {
                     throw new PdfUAConformanceException(
                             PdfUAExceptionMessageConstants.LINK_ANNOT_IS_NOT_NESTED_WITHIN_LINK);
+                }
+                if (!annotObj.containsKey(PdfName.Contents)) {
+                    throw new PdfUAConformanceException(PdfUAExceptionMessageConstants.LINK_ANNOTATION_SHOULD_HAVE_CONTENTS_KEY);
+                }
+            }
+
+            if (PdfName.Screen.equals(subtype)) {
+                PdfDictionary action = annotObj.getAsDictionary(PdfName.A);
+                PdfDictionary additionalActions = annotObj.getAsDictionary(PdfName.AA);
+                ActionCheckUtil.checkAction(action);
+                checkAAEntry(additionalActions);
+            }
+        }
+
+        private static void checkAAEntry(PdfDictionary additionalActions) {
+            if (additionalActions != null) {
+                for (PdfObject val : additionalActions.values()) {
+                    if (val instanceof PdfDictionary) {
+                        ActionCheckUtil.checkAction((PdfDictionary) val);
+                    }
                 }
             }
         }
