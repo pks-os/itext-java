@@ -22,50 +22,58 @@
  */
 package com.itextpdf.signatures.validation.v1;
 
+import com.itextpdf.commons.utils.DateTimeUtil;
 import com.itextpdf.signatures.validation.v1.context.ValidationContext;
 import com.itextpdf.signatures.validation.v1.report.ValidationReport;
 
+import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class MockChainValidator extends CertificateChainValidator {
+public class MockCrlValidator extends CRLValidator {
 
-    public List<ValidationCallBack> verificationCalls = new ArrayList<ValidationCallBack>();
-    private Consumer<ValidationCallBack> onCallHandler;
+    public final List<CRLValidateCall> calls = new ArrayList<>();
+    private Consumer<CRLValidateCall> onCallHandler;
 
-    MockChainValidator() {
+    /**
+     * Creates new {@link CRLValidator} instance.
+     */
+    public MockCrlValidator() {
         super(new ValidatorChainBuilder());
     }
 
     @Override
-    public ValidationReport validate(ValidationReport result, ValidationContext context, X509Certificate certificate, Date verificationDate) {
-        ValidationCallBack call = new ValidationCallBack(certificate, context, result, verificationDate);
+    public void validate(ValidationReport report, ValidationContext context, X509Certificate certificate, X509CRL crl,
+                         Date validationDate) {
+        CRLValidateCall call = new CRLValidateCall(report, context, certificate, crl, validationDate);
+        calls.add(call);
         if (onCallHandler != null) {
-            onCallHandler.accept(call);
+            onCallHandler.accept(calls.get(calls.size() - 1));
         }
-        verificationCalls.add(call);
-        return result;
     }
 
-    public void onCallDo(Consumer<ValidationCallBack> c) {
+    public void onCallDo(Consumer<CRLValidateCall> c) {
         onCallHandler = c;
     }
 
-    public final static class ValidationCallBack {
-
-        public final X509Certificate certificate;
-        public final ValidationContext context;
+    public final static class CRLValidateCall {
+        public final Date timeStamp = DateTimeUtil.getCurrentTimeDate();
         public final ValidationReport report;
-        public final Date checkDate;
+        public final ValidationContext context;
+        public final X509Certificate certificate;
+        public final X509CRL crl;
+        public final Date validationDate;
 
-        public ValidationCallBack(X509Certificate certificate, ValidationContext context, ValidationReport report, Date checkDate) {
-            this.certificate = certificate;
-            this.context = context;
+        public CRLValidateCall(ValidationReport report, ValidationContext context, X509Certificate certificate,
+                               X509CRL crl, Date validationDate) {
             this.report = report;
-            this.checkDate = checkDate;
+            this.context = context;
+            this.certificate = certificate;
+            this.crl = crl;
+            this.validationDate = validationDate;
         }
     }
 }
