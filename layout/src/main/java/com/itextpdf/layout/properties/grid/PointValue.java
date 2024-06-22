@@ -20,27 +20,18 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.itextpdf.layout.properties;
+package com.itextpdf.layout.properties.grid;
 
 /**
- * A specialized enum containing potential property values for
- * {@link com.itextpdf.layout.properties.Property#GRID_FLOW}.
+ * Represents point template value.
  */
-public enum GridFlow {
+public class PointValue extends LengthValue {
     /**
-     * Defines row flow from left to right of a grid.
+     * Creates point value with a given length.
+     *
+     * @param value length value
      */
-    ROW,
-    /**
-     * Defines column flow from top to bottom of a grid.
-     */
-    COLUMN,
-    /**
-     * Same as {@code ROW} but uses dense algorithm for cell placement.
-     */
-    ROW_DENSE,
-    /**
-     * Same as {@code COLUMN} but uses dense algorithm for cell placement.
-     */
-    COLUMN_DENSE
+    public PointValue(float value) {
+        super(ValueType.POINT, value);
+    }
 }
