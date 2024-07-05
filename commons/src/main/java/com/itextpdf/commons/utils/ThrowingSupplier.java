@@ -20,31 +20,19 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.itextpdf.kernel.geom;
+package com.itextpdf.commons.utils;
 
-import com.itextpdf.test.ExtendedITextTest;
-import com.itextpdf.test.annotations.type.UnitTest;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+/**
+ * Functional interface which takes 0 parameters and returns T and can throw a checked exception.
+ */
+@FunctionalInterface
+public interface ThrowingSupplier<T> {
 
-@Category(UnitTest.class)
-public class PageSizeUnitTest extends ExtendedITextTest {
-
-    @Test
-    public void constructFromRectangleTest() {
-        Rectangle rectangle = new Rectangle(0, 0, 100, 200);
-        PageSize pageSize = new PageSize(rectangle);
-        Assert.assertEquals(rectangle.x, pageSize.x, 1e-5);
-        Assert.assertEquals(rectangle.y, pageSize.y, 1e-5);
-        Assert.assertEquals(rectangle.width, pageSize.width, 1e-5);
-        Assert.assertEquals(rectangle.height, pageSize.height, 1e-5);
-    }
-
-    @Test
-    public void A9pageSizeTest() {
-        PageSize size = new PageSize(PageSize.A9);
-        Assert.assertEquals(148, size.height, 1e-5);
-        Assert.assertEquals(105, size.width, 1e-5);
-    }
+    /**
+     * Gets a result.
+     *
+     * @return a result
+     * @throws Exception any exception thrown by the encapsulated code
+     */
+    T get() throws Exception;
 }
