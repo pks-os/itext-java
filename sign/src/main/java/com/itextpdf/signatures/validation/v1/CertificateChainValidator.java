@@ -30,6 +30,7 @@ import com.itextpdf.signatures.validation.v1.context.CertificateSource;
 import com.itextpdf.signatures.validation.v1.context.ValidationContext;
 import com.itextpdf.signatures.validation.v1.context.ValidatorContext;
 import com.itextpdf.signatures.validation.v1.extensions.CertificateExtension;
+import com.itextpdf.signatures.validation.v1.extensions.DynamicCertificateExtension;
 import com.itextpdf.signatures.validation.v1.report.CertificateReportItem;
 import com.itextpdf.signatures.validation.v1.report.ValidationReport;
 import com.itextpdf.signatures.validation.v1.report.ReportItem.ReportItemStatus;
@@ -95,8 +96,12 @@ public class CertificateChainValidator {
      *
      * @param crlClient {@link ICrlClient} to be used for CRL responses receiving
      *
-     * @return same instance of {@link CertificateChainValidator}
+     * @return same instance of {@link CertificateChainValidator}.
+     *
+     * @deprecated in favour of either {@link SignatureValidationProperties#addCrlClient}
+     * or {@link RevocationDataValidator#addCrlClient}. TODO DEVSIX-8398 To be removed.
      */
+    @Deprecated
     public CertificateChainValidator addCrlClient(ICrlClient crlClient) {
         revocationDataValidator.addCrlClient(crlClient);
         return this;
@@ -107,8 +112,12 @@ public class CertificateChainValidator {
      *
      * @param ocpsClient {@link IOcspClient} to be used for OCSP responses receiving
      *
-     * @return same instance of {@link CertificateChainValidator}
+     * @return same instance of {@link CertificateChainValidator}.
+     *
+     * @deprecated in favour of either {@link SignatureValidationProperties#addOcspClient}
+     * or {@link RevocationDataValidator#addOcspClient}. TODO DEVSIX-8398 To be removed.
      */
+    @Deprecated
     public CertificateChainValidator addOcspClient(IOcspClient ocpsClient) {
         revocationDataValidator.addOcspClient(ocpsClient);
         return this;
@@ -122,7 +131,7 @@ public class CertificateChainValidator {
      * @param validationDate {@link Date} against which certificate is expected to be validated. Usually signing
      *                       date
      *
-     * @return {@link ValidationReport} which contains detailed validation results
+     * @return {@link ValidationReport} which contains detailed validation results.
      */
     public ValidationReport validateCertificate(ValidationContext context, X509Certificate certificate,
             Date validationDate) {
@@ -140,13 +149,18 @@ public class CertificateChainValidator {
      * @param validationDate {@link Date} against which certificate is expected to be validated. Usually signing
      *                       date
      *
-     * @return {@link ValidationReport} which contains both provided and new validation results
+     * @return {@link ValidationReport} which contains both provided and new validation results.
      */
     public ValidationReport validate(ValidationReport result, ValidationContext context, X509Certificate certificate,
             Date validationDate) {
+        return validate(result, context, certificate, validationDate, 0);
+    }
+
+    private ValidationReport validate(ValidationReport result, ValidationContext context, X509Certificate certificate,
+            Date validationDate, int certificateChainSize) {
         ValidationContext localContext = context.setValidatorContext(ValidatorContext.CERTIFICATE_CHAIN_VALIDATOR);
         validateValidityPeriod(result, certificate, validationDate);
-        validateRequiredExtensions(result, localContext, certificate);
+        validateRequiredExtensions(result, localContext, certificate, certificateChainSize);
         if (stopValidation(result, localContext)) {
             return result;
         }
@@ -160,7 +174,7 @@ public class CertificateChainValidator {
         if (stopValidation(result, localContext)) {
             return result;
         }
-        validateChain(result, localContext, certificate, validationDate);
+        validateChain(result, localContext, certificate, validationDate, certificateChainSize);
         return result;
     }
 
@@ -255,10 +269,13 @@ public class CertificateChainValidator {
     }
 
     private void validateRequiredExtensions(ValidationReport result, ValidationContext context,
-            X509Certificate certificate) {
+            X509Certificate certificate, int certificateChainSize) {
         List<CertificateExtension> requiredExtensions = properties.getRequiredExtensions(context);
         if (requiredExtensions != null) {
             for (CertificateExtension requiredExtension : requiredExtensions) {
+                if (requiredExtension instanceof DynamicCertificateExtension) {
+                    ((DynamicCertificateExtension) requiredExtension).withCertificateChainSize(certificateChainSize);
+                }
                 if (!requiredExtension.existsInCertificate(certificate)) {
                     result.addReportItem(new CertificateReportItem(certificate, EXTENSIONS_CHECK,
                             MessageFormatUtil.format(EXTENSION_MISSING, requiredExtension.getExtensionOid()),
@@ -277,7 +294,7 @@ public class CertificateChainValidator {
     }
 
     private void validateChain(ValidationReport result, ValidationContext context, X509Certificate certificate,
-            Date validationDate) {
+            Date validationDate, int certificateChainSize) {
         X509Certificate issuerCertificate = null;
         try {
             issuerCertificate =
@@ -306,6 +323,6 @@ public class CertificateChainValidator {
             return;
         }
         this.validate(result, context.setCertificateSource(CertificateSource.CERT_ISSUER),
-                issuerCertificate, validationDate);
+                issuerCertificate, validationDate, certificateChainSize + 1);
     }
 }

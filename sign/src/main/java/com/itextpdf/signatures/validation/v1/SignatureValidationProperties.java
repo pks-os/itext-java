@@ -27,6 +27,8 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.function.Consumer;
 
+import com.itextpdf.signatures.ICrlClient;
+import com.itextpdf.signatures.IOcspClient;
 import com.itextpdf.signatures.validation.v1.context.CertificateSource;
 import com.itextpdf.signatures.validation.v1.context.CertificateSources;
 import com.itextpdf.signatures.validation.v1.context.TimeBasedContext;
@@ -34,8 +36,8 @@ import com.itextpdf.signatures.validation.v1.context.TimeBasedContexts;
 import com.itextpdf.signatures.validation.v1.context.ValidationContext;
 import com.itextpdf.signatures.validation.v1.context.ValidatorContext;
 import com.itextpdf.signatures.validation.v1.context.ValidatorContexts;
-import com.itextpdf.signatures.validation.v1.extensions.BasicConstraintsExtension;
 import com.itextpdf.signatures.validation.v1.extensions.CertificateExtension;
+import com.itextpdf.signatures.validation.v1.extensions.DynamicBasicConstraintsExtension;
 import com.itextpdf.signatures.validation.v1.extensions.ExtendedKeyUsageExtension;
 import com.itextpdf.signatures.validation.v1.extensions.KeyUsage;
 import com.itextpdf.signatures.validation.v1.extensions.KeyUsageExtension;
@@ -57,6 +59,8 @@ public class SignatureValidationProperties {
     public static final OnlineFetching DEFAULT_ONLINE_FETCHING = OnlineFetching.FETCH_IF_NO_OTHER_DATA_AVAILABLE;
 
     private final HashMap<ValidationContext, ContextProperties> properties = new HashMap<>();
+    private final List<IOcspClient> ocspClients = new ArrayList<>();
+    private final List<ICrlClient> crlClients = new ArrayList<>();
 
     /**
      * Create {@link SignatureValidationProperties} with default values.
@@ -82,11 +86,14 @@ public class SignatureValidationProperties {
                 Collections.<CertificateExtension>singletonList(new KeyUsageExtension(KeyUsage.NON_REPUDIATION)));
         List<CertificateExtension> certIssuerRequiredExtensions = new ArrayList<>();
         certIssuerRequiredExtensions.add(new KeyUsageExtension(KeyUsage.KEY_CERT_SIGN));
-        certIssuerRequiredExtensions.add(new BasicConstraintsExtension(true));
+        certIssuerRequiredExtensions.add(new DynamicBasicConstraintsExtension());
         setRequiredExtensions(CertificateSources.of(CertificateSource.CERT_ISSUER), certIssuerRequiredExtensions);
         setRequiredExtensions(CertificateSources.of(CertificateSource.TIMESTAMP),
                 Collections.<CertificateExtension>singletonList(new ExtendedKeyUsageExtension(
                         Collections.<String>singletonList(ExtendedKeyUsageExtension.TIME_STAMPING))));
+
+        ocspClients.add(new ValidationOcspClient());
+        crlClients.add(new ValidationCrlClient());
     }
 
     /**
@@ -220,6 +227,48 @@ public class SignatureValidationProperties {
                 new ArrayList<>(requiredExtensions));
         setParameterValueFor(ValidatorContexts.all().getSet(), certificateSources.getSet(),
                 TimeBasedContexts.all().getSet(), p -> p.setRequiredExtensions(copy));
+        return this;
+    }
+
+    /**
+     * Gets all {@link ICrlClient} instances which will be used to retrieve CRL responses during the validation.
+     *
+     * @return all {@link ICrlClient} instances which will be used to retrieve CRL responses during the validation
+     */
+    public List<ICrlClient> getCrlClients() {
+        return Collections.unmodifiableList(crlClients);
+    }
+
+    /**
+     * Adds new {@link ICrlClient} instance which will be used to retrieve CRL responses during the validation.
+     *
+     * @param crlClient {@link ICrlClient} instance which will be used to retrieve CRL responses during the validation
+     *
+     * @return this same {@link SignatureValidationProperties} instance
+     */
+    public final SignatureValidationProperties addCrlClient(ICrlClient crlClient) {
+        crlClients.add(crlClient);
+        return this;
+    }
+
+    /**
+     * Gets all {@link IOcspClient} instances which will be used to retrieve OCSP responses during the validation.
+     *
+     * @return all {@link IOcspClient} instances which will be used to retrieve OCSP responses during the validation
+     */
+    public List<IOcspClient> getOcspClients() {
+        return Collections.unmodifiableList(ocspClients);
+    }
+
+    /**
+     * Adds new {@link IOcspClient} instance which will be used to retrieve OCSP response during the validation.
+     *
+     * @param ocspClient {@link IOcspClient} instance which will be used to retrieve OCSP response during the validation
+     *
+     * @return this same {@link SignatureValidationProperties} instance
+     */
+    public final SignatureValidationProperties addOcspClient(IOcspClient ocspClient) {
+        ocspClients.add(ocspClient);
         return this;
     }
 

@@ -31,43 +31,23 @@ import java.io.IOException;
 import java.security.cert.X509Certificate;
 
 /**
- * Class representing "Basic Constraints" certificate extension.
- *
- * @deprecated since 8.0.5. To be removed.
+ * Class representing "Basic Constraints" certificate extension,
+ * which uses provided amount of certificates in chain during the comparison.
  */
-@Deprecated
-public class BasicConstraintsExtension extends CertificateExtension {
+public class DynamicBasicConstraintsExtension extends DynamicCertificateExtension {
     private static final IBouncyCastleFactory FACTORY = BouncyCastleFactoryCreator.getFactory();
 
-    private final int pathLength;
-
     /**
-     * Create new {@link BasicConstraintsExtension} instance using provided {@code boolean} value.
-     *
-     * @param ca {@code boolean} value, which represents if this certificate is a "Certificate Authority"
+     * Create new instance of {@link DynamicBasicConstraintsExtension}.
      */
-    public BasicConstraintsExtension(boolean ca) {
-        super(OID.X509Extensions.BASIC_CONSTRAINTS, FACTORY.createBasicConstraints(ca).toASN1Primitive());
-        if (ca) {
-            this.pathLength = Integer.MAX_VALUE;
-        } else {
-            this.pathLength = -1;
-        }
+    public DynamicBasicConstraintsExtension() {
+        super(OID.X509Extensions.BASIC_CONSTRAINTS, FACTORY.createBasicConstraints(true).toASN1Primitive());
     }
 
     /**
-     * Create new {@link BasicConstraintsExtension} instance using provided {@code int} path length.
-     *
-     * @param pathLength {@code int} value, which represents acceptable path length for this certificate as a "CA"
-     */
-    public BasicConstraintsExtension(int pathLength) {
-        super(OID.X509Extensions.BASIC_CONSTRAINTS, FACTORY.createBasicConstraints(pathLength).toASN1Primitive());
-        this.pathLength = pathLength;
-    }
-
-    /**
-     * Check if this extension is present in the provided certificate. In case of {@link BasicConstraintsExtension},
-     * check if path length for this extension is less or equal to the path length, specified in the certificate.
+     * Check if this extension is present in the provided certificate.
+     * In case of {@link DynamicBasicConstraintsExtension}, check if path length for this extension is less or equal
+     * to the path length, specified in the certificate.
      *
      * @param certificate {@link X509Certificate} in which this extension shall be present
      *
@@ -79,12 +59,9 @@ public class BasicConstraintsExtension extends CertificateExtension {
             if (CertificateUtil.getExtensionValue(certificate, OID.X509Extensions.BASIC_CONSTRAINTS) == null) {
                 return false;
             }
-        } catch (IOException | RuntimeException e) {
+        } catch (IOException e) {
             return false;
         }
-        if (pathLength >= 0) {
-            return certificate.getBasicConstraints() >= pathLength;
-        }
-        return certificate.getBasicConstraints() < 0;
+        return certificate.getBasicConstraints() >= getCertificateChainSize();
     }
 }
