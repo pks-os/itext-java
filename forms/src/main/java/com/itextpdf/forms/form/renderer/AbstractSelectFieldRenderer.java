@@ -30,7 +30,6 @@ import com.itextpdf.forms.form.element.IFormField;
 import com.itextpdf.forms.form.element.SelectFieldItem;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.IConformanceLevel;
-import com.itextpdf.kernel.pdf.PdfAConformanceLevel;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.tagging.StandardRoles;
 import com.itextpdf.kernel.pdf.tagutils.AccessibilityProperties;
@@ -148,7 +147,7 @@ public abstract class AbstractSelectFieldRenderer extends BlockRenderer {
     }
 
     /**
-     * Gets the accessibility language.
+     * Gets the accessibility language using {@link IAccessibleElement#getAccessibilityProperties()}.
      *
      * @return the accessibility language.
      */
@@ -156,9 +155,6 @@ public abstract class AbstractSelectFieldRenderer extends BlockRenderer {
         String language = null;
         if (this.getModelElement() instanceof IAccessibleElement) {
             language = ((IAccessibleElement) this.getModelElement()).getAccessibilityProperties().getLanguage();
-        }
-        if (language == null){
-            language = this.<String>getProperty(FormProperty.FORM_ACCESSIBILITY_LANGUAGE);
         }
         return language;
     }
@@ -240,7 +236,7 @@ public abstract class AbstractSelectFieldRenderer extends BlockRenderer {
      * @param field   {@link AbstractSelectField} to retrieve the options from
      */
     protected void setupBuilderValues(ChoiceFormFieldBuilder builder, AbstractSelectField field) {
-        List<SelectFieldItem> options = field.getItems();
+        List<SelectFieldItem> options = field.getOptions();
         if (options.isEmpty()) {
             builder.setOptions(new String[0]);
             return;
@@ -295,25 +291,8 @@ public abstract class AbstractSelectFieldRenderer extends BlockRenderer {
      * @param document the document
      *
      * @return the conformance level or null if the conformance level is not set.
-     * @deprecated since 8.0.4 will be return {@link IConformanceLevel}
      */
-    @Deprecated
-    protected PdfAConformanceLevel getConformanceLevel(PdfDocument document) {
-        return PdfAConformanceLevel.getPDFAConformance(this.<IConformanceLevel>getProperty(
-                FormProperty.FORM_CONFORMANCE_LEVEL),document);
-    }
-
-    /**
-     * Gets the conformance level. If the conformance level is not set, the conformance level of the document is used.
-     *
-     * @param document the document
-     *
-     * @return the conformance level or null if the conformance level is not set.
-     *
-     * @deprecated since 8.0.4 will be renamed to getConformanceLevel()
-     */
-    @Deprecated
-    protected IConformanceLevel getGenericConformanceLevel(PdfDocument document) {
+    protected IConformanceLevel getConformanceLevel(PdfDocument document) {
         final IConformanceLevel conformanceLevel = this.<IConformanceLevel>getProperty(
                 FormProperty.FORM_CONFORMANCE_LEVEL);
         if (conformanceLevel != null) {
@@ -324,7 +303,6 @@ public abstract class AbstractSelectFieldRenderer extends BlockRenderer {
         }
         return document.getConformanceLevel();
     }
-
 
     /**
      * Gets options that are marked as selected from the select field options subtree.

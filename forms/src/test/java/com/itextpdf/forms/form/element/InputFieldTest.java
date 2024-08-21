@@ -133,7 +133,7 @@ public class InputFieldTest extends ExtendedITextTest {
             flattenInputField.setProperty(FormProperty.FORM_FIELD_FLATTEN, Boolean.FALSE);
             flattenInputField.setProperty(FormProperty.FORM_FIELD_VALUE, "input field with lang");
 
-            flattenInputField.setProperty(FormProperty.FORM_ACCESSIBILITY_LANGUAGE, "random_lang");
+            flattenInputField.getAccessibilityProperties().setLanguage("random_lang");
             flattenInputField.setProperty(Property.BORDER, new SolidBorder(2f));
             document.add(flattenInputField);
         }
@@ -152,7 +152,7 @@ public class InputFieldTest extends ExtendedITextTest {
             flattenInputField.setProperty(FormProperty.FORM_FIELD_FLATTEN, Boolean.FALSE);
             flattenInputField.setProperty(FormProperty.FORM_FIELD_VALUE, "input field with null lang");
 
-            flattenInputField.setProperty(FormProperty.FORM_ACCESSIBILITY_LANGUAGE, null);
+            flattenInputField.getAccessibilityProperties().setLanguage(null);
             flattenInputField.setProperty(Property.BORDER, new SolidBorder(2f));
             document.add(flattenInputField);
         }

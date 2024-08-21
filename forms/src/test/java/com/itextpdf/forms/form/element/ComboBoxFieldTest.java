@@ -319,8 +319,7 @@ public class ComboBoxFieldTest extends ExtendedITextTest {
             flattenComboBoxField.addOption(new SelectFieldItem("option 2"));
             flattenComboBoxField.setSelected("option 1");
 
-            //TODO DEVSIX-8205 Use setLanguage method from AccessibilityProperties
-            flattenComboBoxField.setProperty(FormProperty.FORM_ACCESSIBILITY_LANGUAGE, "random_lang");
+            flattenComboBoxField.getAccessibilityProperties().setLanguage("random_lang");
             document.add(flattenComboBoxField);
         }
 
@@ -525,7 +524,7 @@ public class ComboBoxFieldTest extends ExtendedITextTest {
         ComboBoxField comboBoxField = new ComboBoxField("test");
         comboBoxField.addOption(new SelectFieldItem("option 1", "1"));
         comboBoxField.addOption(new SelectFieldItem("option 1", "2"));
-        Assertions.assertEquals(2, comboBoxField.getItems().size());
+        Assertions.assertEquals(2, comboBoxField.getOptions().size());
     }
 
 
@@ -534,7 +533,7 @@ public class ComboBoxFieldTest extends ExtendedITextTest {
         ComboBoxField comboBoxField = new ComboBoxField("test");
         comboBoxField.addOption(new SelectFieldItem("option 1", "1"));
         comboBoxField.addOption(new SelectFieldItem("option 2", "1"));
-        Assertions.assertEquals(2, comboBoxField.getItems().size());
+        Assertions.assertEquals(2, comboBoxField.getOptions().size());
     }
 
     @Test

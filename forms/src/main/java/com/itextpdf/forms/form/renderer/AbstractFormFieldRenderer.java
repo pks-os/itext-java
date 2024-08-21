@@ -285,19 +285,14 @@ public abstract class AbstractFormFieldRenderer extends BlockRenderer {
     }
 
     /**
-     * Gets the accessibility language.
+     * Gets the accessibility language using {@link IAccessibleElement#getAccessibilityProperties()}.
      *
      * @return the accessibility language.
-     * @deprecated use {@link IAccessibleElement#getAccessibilityProperties()} instead
      */
-    @Deprecated()
     protected String getLang() {
         String language = null;
         if (this.getModelElement() instanceof IAccessibleElement) {
             language = ((IAccessibleElement) this.getModelElement()).getAccessibilityProperties().getLanguage();
-        }
-        if (language == null) {
-            language = this.<String>getProperty(FormProperty.FORM_ACCESSIBILITY_LANGUAGE);
         }
         return language;
     }
@@ -308,26 +303,8 @@ public abstract class AbstractFormFieldRenderer extends BlockRenderer {
      * @param document the document
      *
      * @return the conformance level or null if the conformance level is not set.
-     *
-     * @deprecated since 8.0.4 will return {@link IConformanceLevel}
      */
-    @Deprecated
-    protected PdfAConformanceLevel getConformanceLevel(PdfDocument document) {
-        return PdfAConformanceLevel.getPDFAConformance(this.<IConformanceLevel>getProperty(
-                FormProperty.FORM_CONFORMANCE_LEVEL), document);
-    }
-
-    /**
-     * Gets the conformance level. If the conformance level is not set, the conformance level of the document is used.
-     *
-     * @param document the document
-     *
-     * @return the conformance level or null if the conformance level is not set.
-     *
-     * @deprecated since 8.0.4 will be renamed to getConformanceLevel()
-     */
-    @Deprecated
-    protected IConformanceLevel getGenericConformanceLevel(PdfDocument document) {
+    protected IConformanceLevel getConformanceLevel(PdfDocument document) {
         final IConformanceLevel conformanceLevel = this.<IConformanceLevel>getProperty(
                 FormProperty.FORM_CONFORMANCE_LEVEL);
         if (conformanceLevel != null) {
