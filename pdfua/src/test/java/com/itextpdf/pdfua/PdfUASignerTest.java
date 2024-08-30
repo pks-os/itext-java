@@ -22,43 +22,51 @@
  */
 package com.itextpdf.pdfua;
 
-import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
-import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
-import com.itextpdf.commons.bouncycastle.openssl.IPEMParser;
-import com.itextpdf.commons.bouncycastle.openssl.jcajce.IJcaPEMKeyConverter;
 import com.itextpdf.commons.bouncycastle.operator.AbstractOperatorCreationException;
-import com.itextpdf.commons.bouncycastle.operator.IInputDecryptorProvider;
 import com.itextpdf.commons.bouncycastle.pkcs.AbstractPKCSException;
-import com.itextpdf.commons.bouncycastle.pkcs.IPKCS8EncryptedPrivateKeyInfo;
 import com.itextpdf.forms.fields.properties.SignedAppearanceText;
 import com.itextpdf.forms.form.element.SignatureFieldAppearance;
 import com.itextpdf.io.util.UrlUtil;
-import com.itextpdf.kernel.crypto.CryptoUtil;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.Rectangle;
-import com.itextpdf.kernel.pdf.*;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfReader;
+import com.itextpdf.kernel.pdf.PdfUAConformanceLevel;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.pdf.StampingProperties;
 import com.itextpdf.pdfua.exceptions.PdfUAConformanceException;
 import com.itextpdf.pdfua.exceptions.PdfUAExceptionMessageConstants;
-import com.itextpdf.signatures.*;
+import com.itextpdf.signatures.BouncyCastleDigest;
+import com.itextpdf.signatures.DigestAlgorithms;
+import com.itextpdf.signatures.IExternalSignature;
+import com.itextpdf.signatures.PdfSigner;
+import com.itextpdf.signatures.PrivateKeySignature;
+import com.itextpdf.signatures.SignerProperties;
 import com.itextpdf.test.ExtendedITextTest;
-import com.itextpdf.test.pdfa.VeraPdfValidator;
-import com.itextpdf.test.signutils.Pkcs12FileHelper;
+import com.itextpdf.test.pdfa.VeraPdfValidator; // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.util.function.Consumer;
 
 @Tag("IntegrationTest")
 public class PdfUASignerTest extends ExtendedITextTest {
-
 
     private static final String DESTINATION_FOLDER = "./target/test/com/itextpdf/pdfua/PdfUASignerTest/";
     private static final String FONT = "./src/test/resources/com/itextpdf/pdfua/font/FreeSans.ttf";
@@ -67,13 +75,10 @@ public class PdfUASignerTest extends ExtendedITextTest {
     public static final String CERTIFICATE_FOLDER = "./src/test/resources/com/itextpdf/pdfua/certificates/";
     private static final char[] PASSWORD = "testpassphrase".toCharArray();
 
-
-
     @BeforeAll
     public static void beforeClass() {
         createOrClearDestinationFolder(DESTINATION_FOLDER);
     }
-
 
     @Test
     public void invisibleSignatureWithNoTU() {
@@ -89,20 +94,20 @@ public class PdfUASignerTest extends ExtendedITextTest {
     public void invisibleSignatureWithTU() throws GeneralSecurityException, IOException, AbstractOperatorCreationException, AbstractPKCSException {
         ByteArrayInputStream inPdf = generateSimplePdfUA1Document();
         String outPdf = generateSignature(inPdf, "invisibleSignatureWithTU", (signer) -> {
-            signer.setFieldName("Signature12");
-            SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getFieldName());
+            signer.setSignerProperties(new SignerProperties().setFieldName("Signature12"));
+            SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getSignerProperties().getFieldName());
             appearance.getAccessibilityProperties().setAlternateDescription("Some alternate description");
-            signer.setSignatureAppearance(appearance);
+            signer.getSignerProperties().setSignatureAppearance(appearance);
         });
-        Assertions.assertNull(new VeraPdfValidator().validate(outPdf));
+        Assertions.assertNull(new VeraPdfValidator().validate(outPdf)); // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
     }
 
     @Test
     public void visibleSignatureWithTUButNotAFont() throws GeneralSecurityException, IOException, AbstractOperatorCreationException, AbstractPKCSException {
         ByteArrayInputStream inPdf = generateSimplePdfUA1Document();
         String outPdf = generateSignature(inPdf, "visibleSignatureWithTUButNotAFont", (signer) -> {
-            signer.setFieldName("Signature12");
-            SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getFieldName());
+            signer.setSignerProperties(new SignerProperties().setFieldName("Signature12"));
+            SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getSignerProperties().getFieldName());
             appearance.getAccessibilityProperties().setAlternateDescription("Some alternate description");
             try {
                 appearance.setFont(PdfFontFactory.createFont(FONT));
@@ -110,10 +115,12 @@ public class PdfUASignerTest extends ExtendedITextTest {
                 throw new RuntimeException();
             }
             appearance.setContent("Some signature content");
-            signer.setPageNumber(1).setPageRect(new Rectangle(36, 648, 200, 100));
-            signer.setSignatureAppearance(appearance);
+            signer.getSignerProperties()
+                    .setPageNumber(1)
+                    .setPageRect(new Rectangle(36, 648, 200, 100))
+                    .setSignatureAppearance(appearance);
         });
-        Assertions.assertNull(new VeraPdfValidator().validate(outPdf));
+        Assertions.assertNull(new VeraPdfValidator().validate(outPdf)); // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
     }
 
     @Test
@@ -121,8 +128,8 @@ public class PdfUASignerTest extends ExtendedITextTest {
         ByteArrayInputStream inPdf = generateSimplePdfUA1Document();
         Exception e = Assertions.assertThrows(PdfUAConformanceException.class, () -> {
             generateSignature(inPdf, "visibleSignatureWithoutTUFont", (signer) -> {
-                signer.setFieldName("Signature12");
-                SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getFieldName());
+                signer.setSignerProperties(new SignerProperties().setFieldName("Signature12"));
+                SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getSignerProperties().getFieldName());
                 appearance.setContent(new SignedAppearanceText().setLocationLine("Dummy location").setReasonLine("Dummy reason").setSignedBy("Dummy"));
 
                 try {
@@ -131,8 +138,10 @@ public class PdfUASignerTest extends ExtendedITextTest {
                     throw new RuntimeException();
                 }
 
-                signer.setPageNumber(1).setPageRect(new Rectangle(36, 648, 200, 100));
-                signer.setSignatureAppearance(appearance);
+                signer.getSignerProperties()
+                        .setPageNumber(1)
+                        .setPageRect(new Rectangle(36, 648, 200, 100))
+                        .setSignatureAppearance(appearance);
             });
         });
     }
@@ -142,13 +151,13 @@ public class PdfUASignerTest extends ExtendedITextTest {
         ByteArrayInputStream inPdf = generateSimplePdfUA1Document();
         Exception e = Assertions.assertThrows(PdfUAConformanceException.class, () -> {
             generateSignature(inPdf, "visibleSignatureWithNoFontSelected", (signer) -> {
-                signer.setFieldName("Signature12");
-                SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getFieldName());
+                signer.setSignerProperties(new SignerProperties().setFieldName("Signature12"));
+                SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getSignerProperties().getFieldName());
                 appearance.setContent("Some signature content");
-                signer.setPageNumber(1).setPageRect(new Rectangle(36, 648, 200, 100));
+                signer.getSignerProperties().setPageNumber(1).setPageRect(new Rectangle(36, 648, 200, 100));
                 appearance.getAccessibilityProperties().setAlternateDescription("Some alternate description");
                 appearance.setContent(new SignedAppearanceText().setSignedBy("Dummy").setReasonLine("Dummy reason").setLocationLine("Dummy location"));
-                signer.setSignatureAppearance(appearance);
+                signer.getSignerProperties().setSignatureAppearance(appearance);
             });
         });
     }
@@ -158,23 +167,23 @@ public class PdfUASignerTest extends ExtendedITextTest {
     public void normalPdfSignerInvisibleSignatureWithTU() throws GeneralSecurityException, IOException, AbstractOperatorCreationException, AbstractPKCSException {
         ByteArrayInputStream inPdf = generateSimplePdfUA1Document();
         String outPdf = generateSignatureNormal(inPdf, "normalPdfSignerInvisibleSignatureWithTU", (signer) -> {
-            signer.setFieldName("Signature12");
-            SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getFieldName());
+            signer.setSignerProperties(new SignerProperties().setFieldName("Signature12"));
+            SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getSignerProperties().getFieldName());
             appearance.getAccessibilityProperties().setAlternateDescription("Some alternate description");
-            signer.setSignatureAppearance(appearance);
+            signer.getSignerProperties().setSignatureAppearance(appearance);
         });
-        Assertions.assertNull(new VeraPdfValidator().validate(outPdf));
+        Assertions.assertNull(new VeraPdfValidator().validate(outPdf)); // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
     }
 
     @Test
     public void normalPdfSignerInvisibleSignatureWithoutTU() throws GeneralSecurityException, IOException, AbstractOperatorCreationException, AbstractPKCSException {
         ByteArrayInputStream inPdf = generateSimplePdfUA1Document();
         String outPdf = generateSignatureNormal(inPdf, "normalPdfSignerInvisibleSignatureWithoutTU", (signer) -> {
-            signer.setFieldName("Signature12");
-            SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getFieldName());
-            signer.setSignatureAppearance(appearance);
+            signer.setSignerProperties(new SignerProperties().setFieldName("Signature12"));
+            SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getSignerProperties().getFieldName());
+            signer.getSignerProperties().setSignatureAppearance(appearance);
         });
-        Assertions.assertNull(new VeraPdfValidator().validate(outPdf));
+        Assertions.assertNull(new VeraPdfValidator().validate(outPdf)); // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
     }
 
     @Test
@@ -183,14 +192,16 @@ public class PdfUASignerTest extends ExtendedITextTest {
         //This test should fail with the appropriate exception
         ByteArrayInputStream inPdf = generateSimplePdfUA1Document();
         String outPdf = generateSignatureNormal(inPdf, "normalPdfSignerVisibleSignatureWithoutFont", (signer) -> {
-            signer.setFieldName("Signature12");
-            SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getFieldName());
+            signer.setSignerProperties(new SignerProperties().setFieldName("Signature12"));
+            SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getSignerProperties().getFieldName());
             appearance.getAccessibilityProperties().setAlternateDescription("Some alternate description");
             appearance.setContent(new SignedAppearanceText().setLocationLine("Dummy location").setReasonLine("Dummy reason").setSignedBy("Dummy"));
-            signer.setPageNumber(1).setPageRect(new Rectangle(36, 648, 200, 100));
-            signer.setSignatureAppearance(appearance);
+            signer.getSignerProperties()
+                    .setPageNumber(1)
+                    .setPageRect(new Rectangle(36, 648, 200, 100))
+                    .setSignatureAppearance(appearance);
         });
-        Assertions.assertNotNull(new VeraPdfValidator().validate(outPdf));
+        Assertions.assertNotNull(new VeraPdfValidator().validate(outPdf)); // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
     }
 
 
@@ -199,15 +210,17 @@ public class PdfUASignerTest extends ExtendedITextTest {
         ByteArrayInputStream inPdf = generateSimplePdfUA1Document();
         PdfFont font = PdfFontFactory.createFont(FONT);
         String outPdf = generateSignatureNormal(inPdf, "normalPdfSignerVisibleSignatureWithFont", (signer) -> {
-            signer.setFieldName("Signature12");
-            SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getFieldName());
+            signer.setSignerProperties(new SignerProperties().setFieldName("Signature12"));
+            SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getSignerProperties().getFieldName());
             appearance.getAccessibilityProperties().setAlternateDescription("Some alternate description");
             appearance.setContent(new SignedAppearanceText().setLocationLine("Dummy location").setReasonLine("Dummy reason").setSignedBy("Dummy"));
             appearance.setFont(font);
-            signer.setPageNumber(1).setPageRect(new Rectangle(36, 648, 200, 100));
-            signer.setSignatureAppearance(appearance);
+            signer.getSignerProperties()
+                    .setPageNumber(1)
+                    .setPageRect(new Rectangle(36, 648, 200, 100))
+                    .setSignatureAppearance(appearance);
         });
-        Assertions.assertNull(new VeraPdfValidator().validate(outPdf));
+        Assertions.assertNull(new VeraPdfValidator().validate(outPdf)); // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
     }
 
     @Test
@@ -217,15 +230,17 @@ public class PdfUASignerTest extends ExtendedITextTest {
         ByteArrayInputStream inPdf = generateSimplePdfUA1Document();
         PdfFont font = PdfFontFactory.createFont(FONT);
         String outPdf = generateSignatureNormal(inPdf, "normalPdfSignerVisibleSignatureWithFontEmptyTU", (signer) -> {
-            signer.setFieldName("Signature12");
-            SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getFieldName());
+            signer.setSignerProperties(new SignerProperties().setFieldName("Signature12"));
+            SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getSignerProperties().getFieldName());
             appearance.getAccessibilityProperties().setAlternateDescription("");
             appearance.setContent(new SignedAppearanceText().setLocationLine("Dummy location").setReasonLine("Dummy reason").setSignedBy("Dummy"));
             appearance.setFont(font);
-            signer.setPageNumber(1).setPageRect(new Rectangle(36, 648, 200, 100));
-            signer.setSignatureAppearance(appearance);
+            signer.getSignerProperties()
+                    .setPageNumber(1)
+                    .setPageRect(new Rectangle(36, 648, 200, 100))
+                    .setSignatureAppearance(appearance);
         });
-        Assertions.assertNotNull(new VeraPdfValidator().validate(outPdf));
+        Assertions.assertNotNull(new VeraPdfValidator().validate(outPdf)); // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
     }
 
     @Test
@@ -235,13 +250,15 @@ public class PdfUASignerTest extends ExtendedITextTest {
         PdfFont font = PdfFontFactory.createFont(FONT);
         Assertions.assertThrows(PdfUAConformanceException.class, () -> {
             generateSignature(inPdf, "pdfSignerVisibleSignatureWithFontEmptyTU", (signer) -> {
-                signer.setFieldName("Signature12");
-                SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getFieldName());
+                signer.setSignerProperties(new SignerProperties().setFieldName("Signature12"));
+                SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getSignerProperties().getFieldName());
                 appearance.getAccessibilityProperties().setAlternateDescription("");
                 appearance.setContent(new SignedAppearanceText().setLocationLine("Dummy location").setReasonLine("Dummy reason").setSignedBy("Dummy"));
                 appearance.setFont(font);
-                signer.setPageNumber(1).setPageRect(new Rectangle(36, 648, 200, 100));
-                signer.setSignatureAppearance(appearance);
+                signer.getSignerProperties()
+                        .setPageNumber(1)
+                        .setPageRect(new Rectangle(36, 648, 200, 100))
+                        .setSignatureAppearance(appearance);
             });
         });
     }
@@ -260,7 +277,7 @@ public class PdfUASignerTest extends ExtendedITextTest {
         String certFileName = CERTIFICATE_FOLDER + "sign.pem";
 
         Security.addProvider(new BouncyCastleProvider());
-        PrivateKey signPrivateKey = PemFileHelper.readFirstKey(certFileName , PASSWORD);
+        PrivateKey signPrivateKey = PemFileHelper.readFirstKey(certFileName, PASSWORD);
         IExternalSignature pks = new PrivateKeySignature(signPrivateKey, DigestAlgorithms.SHA256, BouncyCastleProvider.PROVIDER_NAME);
         Certificate[] signChain = PemFileHelper.readFirstChain(certFileName);
 
@@ -281,11 +298,10 @@ public class PdfUASignerTest extends ExtendedITextTest {
         Security.addProvider(new BouncyCastleProvider());
         PrivateKey signPrivateKey = PemFileHelper.readFirstKey(certFileName, PASSWORD);
         IExternalSignature pks = new PrivateKeySignature(signPrivateKey, DigestAlgorithms.SHA256, BouncyCastleProvider.PROVIDER_NAME);
-        Certificate[] signChain = PemFileHelper.readFirstChain(certFileName );
+        Certificate[] signChain = PemFileHelper.readFirstChain(certFileName);
 
         String outPdf = DESTINATION_FOLDER + name + ".pdf";
         PdfSigner signer = new PdfSigner(new PdfReader(inPdf), new FileOutputStream(outPdf), new StampingProperties());
-
 
         signingAction.accept(signer);
         signer.signDetached(new BouncyCastleDigest(), pks, signChain, null, null, null, 0, PdfSigner.CryptoStandard.CADES);
