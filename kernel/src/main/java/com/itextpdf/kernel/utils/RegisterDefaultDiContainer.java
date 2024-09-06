@@ -20,30 +20,29 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.itextpdf.nativeimage;
+package com.itextpdf.kernel.utils;
 
-import com.itextpdf.commons.datastructures.ISimpleList;
-import com.itextpdf.commons.datastructures.SimpleArrayList;
-import com.itextpdf.io.source.ByteArrayOutputStream;
+import com.itextpdf.commons.utils.DIContainer;
 import com.itextpdf.kernel.di.pagetree.IPageTreeListFactory;
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfName;
+import com.itextpdf.kernel.di.pagetree.DefaultPageTreeListFactory;
 
-import com.itextpdf.kernel.pdf.PdfWriter;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+/**
+ * Registers a default instance for a dependency injection container for the kernel module.
+ */
+public class RegisterDefaultDiContainer {
 
-class KernelTest {
-    @Test
-    void staticPdfNames() {
-        Assertions.assertTrue(PdfName.staticNames.size() > 800);
+    private static final int DEFAULT_PAGE_TREE_LIST_FACTORY_MAX_SAFE_ENTRIES = 50_000;
+
+    /**
+     * Creates an instance of {@link RegisterDefaultDiContainer}.
+     */
+    public RegisterDefaultDiContainer() {
+        // Empty constructor but should be public as we need it for automatic class loading
+        // sharp
     }
 
-    @Test
-    void testDefaultPagesFactory(){
-        PdfDocument pdfDocument = new PdfDocument(new PdfWriter(new ByteArrayOutputStream()));
-        IPageTreeListFactory factory = pdfDocument.getDiContainer().getInstance(IPageTreeListFactory.class);
-        ISimpleList<String> f = factory.createList(null);
-        Assertions.assertInstanceOf(SimpleArrayList.class, f);
+    static {
+        DIContainer.registerDefault(IPageTreeListFactory.class,
+                () -> new DefaultPageTreeListFactory(DEFAULT_PAGE_TREE_LIST_FACTORY_MAX_SAFE_ENTRIES));
     }
 }
