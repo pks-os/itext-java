@@ -20,18 +20,11 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.itextpdf.bouncycastlefips;
+package com.itextpdf.io.font;
 
-import com.itextpdf.commons.bouncycastle.IBouncyCastleTestConstantsFactory;
+class ResourceTestUtil {
 
-class BouncyCastleFipsTestConstantsFactory implements IBouncyCastleTestConstantsFactory {
-
-    BouncyCastleFipsTestConstantsFactory() {
-        // Empty constructor.
-    }
-
-    @Override
-    public String getCertificateInfoTestConst() {
-        return "corrupted stream - out of bounds length found: 8 >= 6";
+    public static String normalizeResourceName(String resourceName) {
+        return resourceName;
     }
 }

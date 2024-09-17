@@ -223,6 +223,7 @@
                 <file path="com/itextpdf/bouncycastle/tsp/TimeStampTokenGeneratorBC.java"/>
                 <file path="com/itextpdf/bouncycastle/tsp/TimeStampTokenBC.java"/>
                 <file path="com/itextpdf/bouncycastlefips/BouncyCastleFipsFactory.java"/>
+                <file path="com/itextpdf/bouncycastlefips/BouncyCastleFipsTestConstantsFactory.java"/>
                 <file path="com/itextpdf/bouncycastlefips/asn1/ASN1IntegerBCFips.java"/>
                 <file path="com/itextpdf/bouncycastlefips/asn1/ASN1OctetStringBCFips.java"/>
                 <file path="com/itextpdf/bouncycastlefips/asn1/ASN1SequenceBCFips.java"/>
@@ -568,7 +569,8 @@
             <!-- io-tests -->
             <fileset reason="Default types of standard output, e.g. Console.Out and System.out, differ between Java and .NET">
                 <file path="com/itextpdf/io/util/StandardOutUtil.java"/>
-            </fileset>
+                <file path="com/itextpdf/io/font/ResourceTestUtil.java"/>
+	    </fileset>
 
             <!-- kernel-tests -->
             <fileset reason="The ignore is added here due to java.awt is not expected to be ported">
