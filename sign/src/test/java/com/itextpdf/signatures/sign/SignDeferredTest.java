@@ -29,6 +29,7 @@ import com.itextpdf.commons.bouncycastle.pkcs.AbstractPKCSException;
 import com.itextpdf.commons.utils.FileUtil;
 import com.itextpdf.forms.fields.PdfFormCreator;
 import com.itextpdf.forms.form.element.SignatureFieldAppearance;
+import com.itextpdf.kernel.crypto.DigestAlgorithms;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfArray;
 import com.itextpdf.kernel.pdf.PdfDictionary;
@@ -41,7 +42,6 @@ import com.itextpdf.kernel.pdf.StampingProperties;
 import com.itextpdf.kernel.utils.CompareTool;
 import com.itextpdf.signatures.AccessPermissions;
 import com.itextpdf.signatures.BouncyCastleDigest;
-import com.itextpdf.signatures.DigestAlgorithms;
 import com.itextpdf.signatures.ExternalBlankSignatureContainer;
 import com.itextpdf.signatures.IExternalSignatureContainer;
 import com.itextpdf.signatures.PdfPKCS7;
@@ -66,8 +66,8 @@ import java.security.Security;
 import java.security.cert.Certificate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Tag("BouncyCastleIntegrationTest")
 public class SignDeferredTest extends ExtendedITextTest {
@@ -101,7 +101,7 @@ public class SignDeferredTest extends ExtendedITextTest {
         PdfSigner signer = new PdfSigner(reader, FileUtil.getFileOutputStream(output), new StampingProperties());
         SignerProperties signerProperties = new SignerProperties().setFieldName(sigFieldName);
         signer.setSignerProperties(signerProperties);
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(sigFieldName)
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                 .setContent("Signature field which signing is deferred.");
         signerProperties
                 .setPageRect(new Rectangle(36, 600, 200, 100))
@@ -127,7 +127,7 @@ public class SignDeferredTest extends ExtendedITextTest {
         PdfSigner signer = new PdfSigner(reader, new ByteArrayOutputStream(), new StampingProperties());
         SignerProperties signerProperties = new SignerProperties().setFieldName(sigFieldName);
         signer.setSignerProperties(signerProperties);
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(sigFieldName)
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                 .setContent("Signature field which signing is deferred.");
         signerProperties
                 .setPageRect(new Rectangle(36, 600, 200, 100))
@@ -154,7 +154,7 @@ public class SignDeferredTest extends ExtendedITextTest {
         PdfSigner signer = new PdfSigner(reader, new ByteArrayOutputStream(), new StampingProperties());
         SignerProperties signerProperties = new SignerProperties().setFieldName(sigFieldName);
         signer.setSignerProperties(signerProperties);
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(sigFieldName)
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                 .setContent("Signature field which signing is deferred.");
         signerProperties
                 .setPageRect(new Rectangle(36, 600, 200, 100))
@@ -216,7 +216,7 @@ public class SignDeferredTest extends ExtendedITextTest {
                 .setCertificationLevel(AccessPermissions.NO_CHANGES_PERMITTED)
                 .setFieldName(sigFieldName);
         signer.setSignerProperties(signerProperties);
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(sigFieldName)
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                 .setContent("Signature field which signing is deferred.");
         signerProperties
                 .setPageRect(new Rectangle(36, 600, 200, 100))

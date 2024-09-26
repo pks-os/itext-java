@@ -35,6 +35,7 @@ import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.crypto.DigestAlgorithms;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.font.PdfFontFactory.EmbeddingStrategy;
@@ -56,7 +57,6 @@ import com.itextpdf.pdfa.exceptions.PdfAConformanceException;
 import com.itextpdf.pdfa.exceptions.PdfaExceptionMessageConstant;
 import com.itextpdf.signatures.AccessPermissions;
 import com.itextpdf.signatures.BouncyCastleDigest;
-import com.itextpdf.signatures.DigestAlgorithms;
 import com.itextpdf.signatures.IExternalSignature;
 import com.itextpdf.signatures.PdfSigner;
 import com.itextpdf.signatures.PrivateKeySignature;
@@ -79,10 +79,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Tag("BouncyCastleIntegrationTest")
 public class SignedAppearanceTextTest extends ExtendedITextTest {
@@ -122,7 +122,7 @@ public class SignedAppearanceTextTest extends ExtendedITextTest {
         Rectangle rect = new Rectangle(36, 648, 200, 100);
 
         String fieldName = "Signature1";
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(fieldName)
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                 .setContent(new SignedAppearanceText());
         sign(srcFile, fieldName, outPdf, "Test 1", "TestCity 1", rect, appearance);
 
@@ -140,7 +140,7 @@ public class SignedAppearanceTextTest extends ExtendedITextTest {
         Rectangle rect = new Rectangle(50, 70, 400, 200);
         String fieldName = "Signature1";
 
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(fieldName)
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                 .setContent(new SignedAppearanceText()
                         .setSignedBy("Test")
                         .setSignDate(DateTimeUtil.getCurrentTimeCalendar())
@@ -161,7 +161,7 @@ public class SignedAppearanceTextTest extends ExtendedITextTest {
         Rectangle rect = new Rectangle(50, 70, 400, 200);
         String fieldName = "Signature1";
 
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(fieldName)
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                 .setFont(PdfFontFactory.createFont(StandardFonts.COURIER))
                 .setContent(new SignedAppearanceText()
                         .setSignedBy("Test")
@@ -190,7 +190,7 @@ public class SignedAppearanceTextTest extends ExtendedITextTest {
 
         PdfFont font = PdfFontFactory.createFont(FONT_FOLDER + "FreeSans.ttf", EmbeddingStrategy.FORCE_EMBEDDED);
         String fieldName = "Signature1";
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(fieldName)
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                 .setFont(font)
                 .setContent(new SignedAppearanceText()
                         .setSignedBy("Test")
@@ -234,7 +234,7 @@ public class SignedAppearanceTextTest extends ExtendedITextTest {
         Rectangle rect = new Rectangle(50, 200, 400, 100);
 
         PdfFont font1 = PdfFontFactory.createFont(FONT_FOLDER + "FreeSans.ttf", EmbeddingStrategy.FORCE_EMBEDDED);
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(fieldName)
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                 .setFont(font1)
                 .setContent(new SignedAppearanceText()
                         .setSignedBy("Test")
@@ -272,7 +272,7 @@ public class SignedAppearanceTextTest extends ExtendedITextTest {
         Rectangle rect = new Rectangle(36, 648, 200, 100);
 
         String fieldName = "Signature2";
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(fieldName)
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                 .setContent("", new SignedAppearanceText());
         sign(srcFile, fieldName, outPdf, "Test 2", "TestCity 2", rect, appearance);
 
@@ -293,7 +293,7 @@ public class SignedAppearanceTextTest extends ExtendedITextTest {
         Rectangle rect = new Rectangle(36, 648, 300, 100);
 
         String fieldName = "Signature3";
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(fieldName)
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                 .setContent(new SignedAppearanceText(), ImageDataFactory.create(imagePath));
         sign(srcFile, fieldName, outPdf, "Test 3", "TestCity 3", rect, appearance);
 
@@ -314,7 +314,7 @@ public class SignedAppearanceTextTest extends ExtendedITextTest {
         String fieldName = "Signature4";
         String reason = "Test 4";
         String location = "TestCity 4";
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(fieldName)
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                 .setContent(new SignedAppearanceText()
                         .setSignedBy("   wrong signer   ")
                         .setReasonLine("   Signing reason: " + reason)

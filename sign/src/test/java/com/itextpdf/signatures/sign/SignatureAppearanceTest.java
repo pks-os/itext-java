@@ -39,6 +39,7 @@ import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.io.logs.IoLogMessageConstant;
 import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.crypto.DigestAlgorithms;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -63,7 +64,6 @@ import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.properties.VerticalAlignment;
 import com.itextpdf.signatures.AccessPermissions;
 import com.itextpdf.signatures.BouncyCastleDigest;
-import com.itextpdf.signatures.DigestAlgorithms;
 import com.itextpdf.signatures.IExternalSignature;
 import com.itextpdf.signatures.PdfPKCS7;
 import com.itextpdf.signatures.PdfSigner;
@@ -74,6 +74,8 @@ import com.itextpdf.signatures.testutils.PemFileHelper;
 import com.itextpdf.signatures.testutils.SignaturesCompareTool;
 import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.ITextTest;
+import com.itextpdf.test.annotations.LogMessage;
+import com.itextpdf.test.annotations.LogMessages;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -85,14 +87,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.itextpdf.test.annotations.LogMessage;
-import com.itextpdf.test.annotations.LogMessages;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Tag("BouncyCastleIntegrationTest")
 public class SignatureAppearanceTest extends ExtendedITextTest {
@@ -198,7 +197,7 @@ public class SignatureAppearanceTest extends ExtendedITextTest {
 
         String fieldName = "Sign1";
 
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(fieldName)
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                 .setContent(new SignedAppearanceText()).setFontSize(13.8f);
 
         SignerProperties signerProperties = new SignerProperties()
@@ -237,7 +236,7 @@ public class SignatureAppearanceTest extends ExtendedITextTest {
         // Creating the appearance
         signerProperties
                 .setPageRect(rect)
-                .setSignatureAppearance(new SignatureFieldAppearance(signerProperties.getFieldName())
+                .setSignatureAppearance(new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                         .setFontColor(ColorConstants.RED)
                         .setContent("Verified and signed by me."));
 
@@ -293,7 +292,7 @@ public class SignatureAppearanceTest extends ExtendedITextTest {
                 .setReason("Test 1")
                 .setLocation("TestCity");
         signer.setSignerProperties(signerProperties);
-        signerProperties.setSignatureAppearance(new SignatureFieldAppearance(signerProperties.getFieldName())
+        signerProperties.setSignatureAppearance(new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                         .setContent("Verified and signed by me."));
         signer.getSignatureField().setReuseAppearance(false);
 
@@ -321,7 +320,7 @@ public class SignatureAppearanceTest extends ExtendedITextTest {
                 .setCertificationLevel(AccessPermissions.UNSPECIFIED)
                 .setFieldName("Signature1");
         signer.setSignerProperties(signerProperties);
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getSignerProperties().getFieldName())
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                 .setContent("SIGNED")
                 .setFontColor(ColorConstants.GREEN);
         appearance.setProperty(Property.VERTICAL_ALIGNMENT, VerticalAlignment.MIDDLE);
@@ -356,7 +355,7 @@ public class SignatureAppearanceTest extends ExtendedITextTest {
                 .setReason("Test 1")
                 .setLocation("TestCity");
         signer.setSignerProperties(signerProperties);
-        signerProperties.setSignatureAppearance(new SignatureFieldAppearance(signerProperties.getFieldName())
+        signerProperties.setSignatureAppearance(new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                         .setContent("Verified and signed by me."));
         signer.getSignatureField().setReuseAppearance(true);
 
@@ -421,7 +420,7 @@ public class SignatureAppearanceTest extends ExtendedITextTest {
         SignerProperties signerProperties = new SignerProperties().setFieldName(fieldName);
         signer.setSignerProperties(signerProperties);
         // Creating the appearance
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(fieldName)
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                 .setContent("Test signature field appearance. Test signature field appearance. " +
                         "Test signature field appearance. Test signature field appearance");
         signerProperties
@@ -447,7 +446,7 @@ public class SignatureAppearanceTest extends ExtendedITextTest {
         signer.setSignerProperties(signerProperties);
 
         // Creating the appearance
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getSignerProperties().getFieldName())
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                 .setContent("Test signature field appearance. Test signature field appearance. " +
                         "Test signature field appearance. Test signature field appearance");
         signerProperties.setReason("Appearance is tested")
@@ -489,7 +488,7 @@ public class SignatureAppearanceTest extends ExtendedITextTest {
         PdfSigner signer = new PdfSigner(new PdfReader(src), FileUtil.getFileOutputStream(dest), new StampingProperties());
         SignerProperties signerProperties = new SignerProperties().setFieldName(fieldName);
         signer.setSignerProperties(signerProperties);
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(fieldName)
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                 .setContent("Signature field")
                 .setBackgroundColor(ColorConstants.GREEN)
                 .setBorder(new SolidBorder(ColorConstants.LIGHT_GRAY, 3))
@@ -519,7 +518,7 @@ public class SignatureAppearanceTest extends ExtendedITextTest {
 
         Rectangle rect = new Rectangle(36, 648, 200, 100);
         String fieldName = "Signature1";
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(fieldName);
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID);
 
         PdfSigner signer = new PdfSigner(new PdfReader(srcFile), FileUtil.getFileOutputStream(outPdf), new StampingProperties());
         SignerProperties signerProperties = new SignerProperties()
@@ -568,7 +567,7 @@ public class SignatureAppearanceTest extends ExtendedITextTest {
         signerProperties
                 .setReason("Test 1")
                 .setLocation("TestCity")
-                .setSignatureAppearance(new SignatureFieldAppearance(fieldName)
+                .setSignatureAppearance(new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                         .setContent("New appearance").setFontColor(ColorConstants.GREEN));
 
         IExternalSignature pks = new PrivateKeySignature(pk, DigestAlgorithms.SHA256, FACTORY.getProviderName());
@@ -588,7 +587,7 @@ public class SignatureAppearanceTest extends ExtendedITextTest {
                 .setPageRect(new Rectangle(250, 500, 100, 100))
                 .setReason("Test 1")
                 .setLocation("TestCity")
-                .setSignatureAppearance(new SignatureFieldAppearance(fieldName));
+                .setSignatureAppearance(new SignatureFieldAppearance(SignerProperties.IGNORED_ID));
         signer.setSignerProperties(signerProperties);
 
         PdfFormXObject layer0 = new PdfFormXObject(new Rectangle(0, 0, 100, 100));
@@ -629,7 +628,7 @@ public class SignatureAppearanceTest extends ExtendedITextTest {
         String src = SOURCE_FOLDER + "documentWithRotatedPages.pdf";
 
         String signatureName = "Signature1";
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(signatureName);
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID);
         String description = "Digitally signed by Test User. All rights reserved. Take care!";
         if (useImage) {
             if (useDescription) {
@@ -685,7 +684,7 @@ public class SignatureAppearanceTest extends ExtendedITextTest {
         SignerProperties signerProperties = new SignerProperties().setFieldName("Signature1");
         signer.setSignerProperties(signerProperties);
         // Creating the appearance
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(signer.getSignerProperties().getFieldName());
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID);
         if (image != null) {
             appearance.setContent(new SignedAppearanceText(), image);
         } else if (signerName != null) {

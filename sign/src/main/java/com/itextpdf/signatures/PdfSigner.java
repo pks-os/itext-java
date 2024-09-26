@@ -41,6 +41,7 @@ import com.itextpdf.io.source.IRandomAccessSource;
 import com.itextpdf.io.source.RASInputStream;
 import com.itextpdf.io.source.RandomAccessSourceFactory;
 import com.itextpdf.io.util.StreamUtil;
+import com.itextpdf.kernel.crypto.DigestAlgorithms;
 import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.geom.Rectangle;
@@ -995,8 +996,7 @@ public class PdfSigner {
      */
     protected SignatureFieldAppearance getSignatureAppearance() {
         if (this.signerProperties.getSignatureAppearance() == null) {
-            this.signerProperties.setSignatureAppearance(
-                    new SignatureFieldAppearance(this.signerProperties.getFieldName()));
+            this.signerProperties.setSignatureAppearance(new SignatureFieldAppearance(SignerProperties.IGNORED_ID));
             setContent();
         } else {
             populateExistingModelElement();

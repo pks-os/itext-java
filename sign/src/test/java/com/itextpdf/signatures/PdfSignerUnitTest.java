@@ -37,6 +37,7 @@ import com.itextpdf.forms.fields.PdfSignatureFormField;
 import com.itextpdf.forms.fields.SignatureFormFieldBuilder;
 import com.itextpdf.forms.form.element.SignatureFieldAppearance;
 import com.itextpdf.io.source.ByteArrayOutputStream;
+import com.itextpdf.kernel.crypto.DigestAlgorithms;
 import com.itextpdf.kernel.exceptions.PdfException;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.logs.KernelLogMessageConstant;
@@ -287,7 +288,7 @@ public class PdfSignerUnitTest extends ExtendedITextTest {
                 .setPageRect(new Rectangle(100, 100, 10, 10));
         signer.setSignerProperties(signerProperties);
 
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(signerProperties.getFieldName());
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID);
         appearance.setContent("Some text");
         appearance.getAccessibilityProperties().setAlternateDescription("Alternate description");
         signerProperties.setSignatureAppearance(appearance);

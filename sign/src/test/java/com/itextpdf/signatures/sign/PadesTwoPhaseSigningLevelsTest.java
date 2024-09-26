@@ -26,9 +26,9 @@ import com.itextpdf.bouncycastleconnector.BouncyCastleFactoryCreator;
 import com.itextpdf.commons.bouncycastle.IBouncyCastleFactory;
 import com.itextpdf.commons.utils.FileUtil;
 import com.itextpdf.forms.form.element.SignatureFieldAppearance;
+import com.itextpdf.kernel.crypto.DigestAlgorithms;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfReader;
-import com.itextpdf.signatures.DigestAlgorithms;
 import com.itextpdf.signatures.IExternalSignature;
 import com.itextpdf.signatures.PadesTwoPhaseSigningHelper;
 import com.itextpdf.signatures.PrivateKeySignature;
@@ -44,7 +44,6 @@ import com.itextpdf.test.ExtendedITextTest;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.Certificate;
@@ -315,7 +314,7 @@ public class PadesTwoPhaseSigningLevelsTest extends ExtendedITextTest {
     private SignerProperties createSignerProperties() {
         SignerProperties signerProperties = new SignerProperties();
         signerProperties.setFieldName("Signature1");
-        SignatureFieldAppearance appearance = new SignatureFieldAppearance(signerProperties.getFieldName())
+        SignatureFieldAppearance appearance = new SignatureFieldAppearance(SignerProperties.IGNORED_ID)
                 .setContent("Approval test signature.\nCreated by iText.");
         signerProperties.setPageRect(new Rectangle(50, 650, 200, 100))
                 .setSignatureAppearance(appearance);
