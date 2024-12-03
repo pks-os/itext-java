@@ -47,6 +47,11 @@ public class CircleNodeRendererIntegrationTest extends SvgIntegrationTest {
     }
 
     @Test
+    public void relativeCircleTest() throws IOException, InterruptedException, java.io.IOException {
+        convertAndCompare(sourceFolder, destinationFolder, "relativeCircle");
+    }
+
+    @Test
     public void circleCxCyAbsentTest() throws IOException, InterruptedException, java.io.IOException {
         convertAndCompare(sourceFolder, destinationFolder, "circleCxCyAbsent");
     }
@@ -120,5 +125,10 @@ public class CircleNodeRendererIntegrationTest extends SvgIntegrationTest {
     // TODO: DEVSIX-3932 update cmp_ after fix
     public void circleWithBigStrokeWidthTest() throws IOException, InterruptedException, java.io.IOException {
         convertAndCompare(sourceFolder, destinationFolder, "circleWithBigStrokeWidth");
+    }
+
+    @Test
+    public void circleShapeRenderingTest() throws IOException, InterruptedException, java.io.IOException {
+        convertAndCompare(sourceFolder, destinationFolder, "shape-rendering");
     }
 }

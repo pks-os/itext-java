@@ -111,7 +111,6 @@ public class ClipPathSvgNodeRendererIntegrationTest extends SvgIntegrationTest {
     }
 
     @Test
-    //TODO: update after DEVSIX-2377
     public void clipPathRulesCombined() throws IOException, InterruptedException {
         convertAndCompareSinglePage(sourceFolder, destinationFolder, "clipPathRulesCombined");
     }
@@ -120,5 +119,10 @@ public class ClipPathSvgNodeRendererIntegrationTest extends SvgIntegrationTest {
     // TODO: DEVSIX-3923 update cmp_ after fix
     public void invalidClipPathTagTest() throws IOException, InterruptedException {
         convertAndCompareSinglePage(sourceFolder, destinationFolder, "clippath_invalid_tag");
+    }
+
+    @Test
+    public void clipPathUnitsTest() throws IOException, InterruptedException {
+        convertAndCompareSinglePage(sourceFolder, destinationFolder, "clipPathUnits");
     }
 }
