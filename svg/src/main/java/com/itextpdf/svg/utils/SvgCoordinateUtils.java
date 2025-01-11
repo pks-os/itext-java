@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2024 Apryse Group NV
+    Copyright (c) 1998-2025 Apryse Group NV
     Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
@@ -58,7 +58,7 @@ public class SvgCoordinateUtils {
             for (int j = 0; j < currentCoordinates.length; j++, i++) {
                 double relativeDouble = Double.parseDouble(relativeCoordinates[i]);
                 relativeDouble += currentCoordinates[j];
-                absoluteOperators[i] = SvgCssUtils.convertDoubleToString(relativeDouble);
+                absoluteOperators[i] = Double.toString(relativeDouble);
             }
         }
 
